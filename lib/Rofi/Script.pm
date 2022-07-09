@@ -28,15 +28,38 @@ rofi is a lightweight, extensible, scriptable, menu interface for Linux. It has
 a scripting API documented in C<man rofi-script>. This module is a perl
 interface to that API.
 
+Generally, the interface works by L<printing options|/add_option> to STDOUT,
+which appear in the rofi menu for selection. Each time a user selects an option,
+the script is called again with the most recent selection pushed onto C<@ARGV>.
+
+There are also some envars that let you inspect certain user actions. Those are
+exposed via:
+
+=over
+
+=item L</is_initial_call>
+
+=item L</provided_entry_selected>
+
+=item L</custom_entry_selected>
+
+=back
+
+There are also some options that can be set by printing specially formatted
+strings to STDOUT.
+
 =head1 SYNOPSIS
 
   use Rofi::Script;
 
+  # print options on the first call; if a user selects these, we can detect that
+  # in the SWITCH below
   if (rofi->is_initial_call) {
       rofi->set_prompt("Please select one")
           ->add_option("Show markup example");
   }
 
+  # handle user selections
   SWITCH: for (rofi->shift_arg) {
       next unless $_;
 
@@ -45,6 +68,10 @@ interface to that API.
           ->enable_markup_rows
           ->add_option(qq{<i>You can use pango for markup</i>});
   }
+
+  rofi->show;
+
+See also the example implementation script in C<bin/example.pl>.
 
 =cut
 
@@ -459,9 +486,14 @@ sub _render_option {
 
 =head2 debug
 
+  # dump the rofi object
   rofi->debug
 
-Dump the contents of the L</rofi> object to STDERR
+  # dump whatever
+  Rofi::Script::debug($whatever);
+
+Dump the contents of the L</rofi> object (or anything else) to STDERR. Set
+C<ROFI_SCRIPT_DEBUG> to enable this.
 
 =cut
 
