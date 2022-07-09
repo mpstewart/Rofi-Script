@@ -155,16 +155,27 @@ sub shift_arg {
 =head2 add_option
 
   rofi->add_option("Choice #1");
+  rofi->add_option(
+    "You can also pass options to rows",
+    (
+      nonselectable => 1,
+      meta         => 'invisible search terms',
+      icon         => 'path/to/icon/to/show/in/row'
+    )
+  );
 
 Add a row to rofi's output. If you select a row, it will cause your script to
 be re-called, with the selected row pushed onto the args stack.
+
+You can also pass an even sized list after the row text to modify certain
+aspects of the row.
 
 =cut
 
 sub add_option {
   my ($self, $option, %mode_options) = @_;
   my $what;
-  for (qw(urgent active)) {
+  for (qw(nonselectable)) {
     $mode_options{$_} = 'true' if $mode_options{$_};
   }
 
@@ -423,13 +434,13 @@ sub _print_row {
     my %mode_options = %{$row->[1]};
 
     my @collected_mode_options;
-    for (my ($opt, $val) = each %mode_options) {
+    for my $opt (keys %mode_options) {
+      my $val = $mode_options{$opt};
       push @collected_mode_options, _render_option($opt => $val);
     }
     my $rendered_mode_options = join "\x1f", @collected_mode_options;
 
-    $self->_print($content);
-    $self->_print($rendered_mode_options);
+    $self->_print($content.$rendered_mode_options);
   }
 
   elsif (not ref $row) {
