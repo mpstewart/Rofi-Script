@@ -1,4 +1,6 @@
 package Rofi::Script;
+# VERSION
+
 use strict;
 use warnings;
 
@@ -27,7 +29,7 @@ Rofi::Script - perl interface to the rofi menu
 =head1 DESCRIPTION
 
 rofi is a lightweight, extensible, scriptable, menu interface for Linux. It has
-a scripting API documented in C<man rofi-script>. This module is a perl
+a scripting API documented in L<rofi-script>. This module is a perl
 interface to that API.
 
 Generally, the interface works by L<printing options|/add_option> to STDOUT,
@@ -86,7 +88,7 @@ my $DELIM = "\n";
   rofi
     ->set_prompt('Please choose')
     ->add_option("Foo")
-    ->add_option("Bar");
+    ->add_option("Bar")
   if rofi->is_initial_call;
 
   if (my $cmd = rofi->shift_arg) {
@@ -94,8 +96,6 @@ my $DELIM = "\n";
       ->set_prompt("foo")
       ->add_option("bar");
   }
-
-  ...etc
 
 This is a god object that's the primary interface to the entire script
 interface. This object uses a fluid configuration style where you can chain
@@ -197,15 +197,15 @@ sub shift_arg {
 
 =head2 add_option
 
-  rofi->add_option("Choice #1");
-  rofi->add_option(
-    "You can also pass options to rows",
-    (
-      nonselectable => 1,
-      meta         => 'invisible search terms',
-      icon         => 'path/to/icon/to/show/in/row'
-    )
-  );
+    rofi->add_option("Choice #1");
+    rofi->add_option(
+        "You can also pass options to rows" => (
+            nonselectable => 1,
+            urgent        => 1,
+            meta          => 'invisible search terms',
+            icon          => 'path/to/icon/to/show/in/row'
+        )
+    );
 
 Add a row to rofi's output. If you select a row, it will cause your script to
 be re-called, with the selected row pushed onto the args stack.
