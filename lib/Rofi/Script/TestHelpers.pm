@@ -1,15 +1,15 @@
 package Rofi::Script::TestHelpers;
 
 use Test2::API qw( context );
- 
+
 use base 'Exporter';
 our @EXPORT = qw(
-    rofi_shows
+  rofi_shows
 );
 
 # need a rofi object
 use Rofi::Script;
- 
+
 sub rofi_shows($$;$) {
     my ($want, $name) = @_;
 
@@ -21,10 +21,11 @@ sub rofi_shows($$;$) {
 
     close $show_handle;
 
-    my $ctx = context(); # Get a context
+    my $ctx = context();    # Get a context
     if ($shown eq $want) {
         $ctx->pass_and_release($name);
-    } else {
+    }
+    else {
         my $diag = sprintf(<<DIAG, $want, $shown);
 Wanted:
 -------
