@@ -264,6 +264,8 @@ sub show {
     for my $output_row (@printable_rows) {
         $self->_print_row($output_row);
     }
+
+    return;
 }
 
 =head2 set_show_handle

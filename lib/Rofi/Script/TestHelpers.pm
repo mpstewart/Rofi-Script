@@ -57,11 +57,14 @@ DIAG
 sub init_rofi(%) {
     $ENV{ROFI_RETV} ||= 0;
     rofi->clear();
+    return;
 }
 
 # set the args slot on the global rofi object
 sub mock_rofi_args (@) {
-    rofi->{args} = \@_;
+    my (@mock_args) = @_;
+    rofi->{args} = \@mock_args;
+    return;
 }
 
 1;
