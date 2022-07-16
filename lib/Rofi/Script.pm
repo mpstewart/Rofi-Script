@@ -115,11 +115,20 @@ Print output to STDOUT (this is how the rofi app actually displays things)
 
 =back
 
+If it doesn't look like the script was called by rofi (i.e. C<ROFI_RETV> is
+unset), I<and> C<ROFI_SCRIPT_DEBUG> is unset, this will return undef. So it's
+possible to know if your script (or whatever) was called from rofi or not.
+
 =cut
 
-
 my $ROFI;
+
 sub rofi () {
+    unless (defined($ROFI_RETV)) {
+        warn
+          "Script not called from a rofi environment. Set ROFI_RETV if you wish to execute the script outside of a rofi instance. Search `man rofi-script` for ROFI_RETV for values\n";
+    }
+
     return $ROFI if $ROFI;
 
     my $init_state = {
@@ -149,7 +158,7 @@ Gets the arguments L</rofi> is aware of.
 
 sub get_args {
     my ($self) = @_;
-    return $self->{args};
+    return @{$self->{args}};
 }
 
 =head2 set_args
@@ -170,7 +179,7 @@ sub set_args {
 
   my $cmd = rofi->shift_arg
 
-Shift the leading arg from the args queue. This is how you would navigate your
+Pop the last arg from the args queue. This is how you would navigate your
 way through the rofi's "call stack"
 
 =cut
@@ -178,9 +187,9 @@ way through the rofi's "call stack"
 sub shift_arg {
     my ($self) = @_;
 
-    my @args = @{$self->get_args};
-    my $arg  = shift @args;
+    my @args = $self->get_args;
 
+    my $arg = shift @args;
     $self->set_args(@args);
 
     return $arg;
@@ -207,19 +216,16 @@ aspects of the row.
 =cut
 
 sub add_option {
-    my ($self, $option, %mode_options) = @_;
-    my $what;
-    for (qw(nonselectable)) {
-        $mode_options{$_} = 'true' if $mode_options{$_};
+    my ($self, $option_text, %mode_options) = @_;
+
+    my @coerce_bools = qw( nonselectable );
+    for my $mode_opt (@coerce_bools) {
+        if (exists($mode_options{$mode_opt})) {
+            $mode_options{$mode_opt} &&= 'true';
+        }
     }
 
-    if (%mode_options) {
-        $what = [$option, \%mode_options,];
-    }
-    else {
-        $what = $option;
-    }
-    push @{$self->{output_rows}}, $what;
+    push @{$self->{output_rows}}, [$option_text, \%mode_options];
 
     return $self;
 }
@@ -236,14 +242,28 @@ default, this goes to STDOUT.
 sub show {
     my ($self) = @_;
 
-    $self->_print_global_mode_options;
+    $self->debug;
 
+    my @printable_rows;
     my @output_rows = @{$self->{output_rows}};
-    for my $output_row (@output_rows) {
-        $self->_print_row($output_row);
+    for (my $i = 0; $i < @output_rows; $i++) {
+        my $output_row = $output_rows[$i];
+
+        if (ref $output_row eq 'ARRAY') {
+            my %mode_options = %{$output_row->[1]};
+
+            if ($mode_options{urgent}) {
+                $self->mark_row_urgent($i);
+            }
+        }
+
+        push @printable_rows, $output_row;
     }
 
-    return;
+    $self->_print_global_mode_options;
+    for my $output_row (@printable_rows) {
+        $self->_print_row($output_row);
+    }
 }
 
 =head2 set_show_handle
@@ -335,6 +355,23 @@ sub set_message {
     my ($self, $message) = @_;
     croak "Need message" unless $message;
     $self->_set_mode_option(message => $message);
+
+    return $self;
+}
+
+sub mark_row_urgent {
+    my ($self, $i) = @_;
+
+    my $urgent_rows = $self->_get_mode_option('urgent');
+
+    unless ($urgent_rows) {
+        $urgent_rows = $i;
+    }
+    else {
+        $urgent_rows .= ",$i";
+    }
+
+    $self->_set_mode_option(urgent => $urgent_rows);
 
     return $self;
 }
@@ -441,8 +478,6 @@ sub _print_global_mode_options {
 
     my %global_mode_options = %{$self->{mode_options}};
 
-    return unless %global_mode_options;
-
     for my $opt (keys %global_mode_options) {
         my $val = $global_mode_options{$opt};
         $self->_print(_render_option($opt => $val));
@@ -460,6 +495,7 @@ sub _print_row {
 
         my @collected_mode_options;
         for my $opt (keys %mode_options) {
+            next if $opt eq 'urgent';
             my $val = $mode_options{$opt};
             push @collected_mode_options, _render_option($opt => $val);
         }

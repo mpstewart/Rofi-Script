@@ -11,15 +11,18 @@ use Test2::Tools::Class;
 use Test2::Tools::Exception;
 
 use Rofi::Script;
-use Rofi::Script::TestHelpers qw( rofi_shows );
+use Rofi::Script::TestHelpers qw(
+  init_rofi
+  mock_rofi_args
+  rofi_shows
+);
 
 my @tests = (
     subname(
         test_rofi => sub {
-            isa_ok
-              rofi,
-              ['Rofi::Script'],
-              'rofi init succeeded';
+            ok
+              rofi->isa('Rofi::Script'),
+              'basic rofi init succeeded';
         }
     ),
 
@@ -27,8 +30,8 @@ my @tests = (
         test_add_option => sub {
             rofi->add_option("Hello, world!");
             is
-              rofi->{output_rows},
-              ['Hello, world!'],
+              rofi->{output_rows}->[0]->[0],
+              'Hello, world!',
               "add option";
 
             rofi->add_option("Has mode options", foo => 'bar',);
@@ -56,9 +59,7 @@ my @tests = (
         test_args => sub {
             my @args = qw( foo bar baz);
             rofi->{args} = \@args;
-            is
-              rofi->get_args, \@args,
-              'get_args gets the args';
+            is [rofi->get_args], \@args, 'get_args gets the args';
 
             for my $arg (@args) {
                 is
@@ -99,7 +100,7 @@ my @tests = (
 );
 
 for my $test (@tests) {
-    rofi->clear();
+    init_rofi();
     $test->();
 }
 

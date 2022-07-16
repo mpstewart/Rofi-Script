@@ -10,7 +10,9 @@ use base 'Exporter';
 
 ## no critic (ProhibitAutomaticExportation)
 our @EXPORT = qw(
+  mock_rofi_args
   rofi_shows
+  init_rofi
 );
 
 # need a rofi object
@@ -22,7 +24,7 @@ sub rofi_shows($$;$) {
 
     my $shown = '';
     open my $show_handle, '>', \$shown
-        or croak "Could not open show handle";
+      or croak "Could not open show handle";
     rofi->set_show_handle($show_handle);
 
     rofi->show();
@@ -50,5 +52,16 @@ DIAG
     return $shown;
 }
 
+# clear out the global rofi object, and provide a way to override the rofi
+# environment
+sub init_rofi(%) {
+    $ENV{ROFI_RETV} ||= 0;
+    rofi->clear();
+}
+
+# set the args slot on the global rofi object
+sub mock_rofi_args (@) {
+    rofi->{args} = \@_;
+}
 
 1;
