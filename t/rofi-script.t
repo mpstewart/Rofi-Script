@@ -1,6 +1,7 @@
+## no critic (RequireFilenameMatchesPackage)
+package Test::Rofi::Script;
 use strict;
 use warnings;
-use v5.10;
 
 use autodie qw( open close );
 
@@ -98,8 +99,10 @@ my @tests = (
 );
 
 for my $test (@tests) {
-    undef($Rofi::Script::rofi);
+    rofi->clear();
     $test->();
 }
 
 done_testing;
+
+1;

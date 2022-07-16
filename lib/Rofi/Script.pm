@@ -1,10 +1,10 @@
 package Rofi::Script;
 use strict;
 use warnings;
-use v5.10;
 
 use Carp qw( croak );
 use Data::Printer;
+
 use Env qw(
   $ROFI_RETV
   $ROFI_INFO
@@ -12,6 +12,8 @@ use Env qw(
 );
 
 use base 'Exporter';
+
+## no critic (ProhibitAutomaticExportation)
 our @EXPORT = qw(
   rofi
 );
@@ -116,10 +118,9 @@ Print output to STDOUT (this is how the rofi app actually displays things)
 =cut
 
 
-our $rofi;
-
+my $ROFI;
 sub rofi () {
-    return $rofi if $rofi;
+    return $ROFI if $ROFI;
 
     my $init_state = {
         args         => \@ARGV,
@@ -128,9 +129,14 @@ sub rofi () {
         show_handle  => undef,
     };
 
-    $rofi = bless($init_state, __PACKAGE__);
+    $ROFI = bless($init_state, __PACKAGE__);
 
-    return $rofi;
+    return $ROFI;
+}
+
+sub clear {
+    undef($ROFI);
+    return;
 }
 
 =head1 METHODS
@@ -236,6 +242,8 @@ sub show {
     for my $output_row (@output_rows) {
         $self->_print_row($output_row);
     }
+
+    return;
 }
 
 =head2 set_show_handle
@@ -277,7 +285,9 @@ True if this is the first time the script is being called
 
 =cut
 
-sub is_initial_call { $ROFI_RETV == 0 }
+sub is_initial_call {
+    return $ROFI_RETV == 0;
+}
 
 =head2 provided_entry_selected
 
@@ -285,7 +295,9 @@ The user selected a value from the list of provided entries
 
 =cut
 
-sub provided_entry_selected { $ROFI_RETV == 1 }
+sub provided_entry_selected {
+    return $ROFI_RETV == 1;
+}
 
 =head2 custom_entry_selected
 
@@ -293,7 +305,9 @@ User manually entered a value on the previous run
 
 =cut
 
-sub custom_entry_selected { $ROFI_RETV == 2 }
+sub custom_entry_selected {
+    return $ROFI_RETV == 2;
+}
 
 =head2 set_prompt
 
@@ -362,7 +376,7 @@ Query whether or not markup rows are enabled
 
 sub markup_rows_enabled {
     my ($self) = @_;
-    $self->_get_mode_option('markup_rows') eq 'true';
+    return $self->_get_mode_option('markup_rows') eq 'true';
 }
 
 =head2 set_delim
@@ -390,26 +404,9 @@ Call this to ignore any custom entries from the user
 =cut
 
 sub set_no_custom {
-    my ($self, $set) = @_;
-
-    croak "must be 'true' or 'false' (not $set)"
-      unless grep { $set eq $_ } qw( true false );
-
-    $self->_set_mode_option(no_custom => $set);
-
+    my ($self) = @_;
+    $self->_set_mode_option(no_custom => 'true');
     return $self;
-}
-
-=head2 use_hot_keys
-
-Something to do with custom keybinds from the user. This isn't implemented.
-I haven't needed it yet.
-
-=cut
-
-sub use_hot_keys {
-    my ($self, $set) = @_;
-    croak "use_hot_keys not yet implemented";
 }
 
 sub _set_mode_option {
@@ -418,6 +415,8 @@ sub _set_mode_option {
     $option =~ s/_/-/g;
 
     $self->{mode_options}->{$option} = $value;
+
+    return;
 }
 
 sub _get_mode_option {
@@ -433,12 +432,12 @@ sub _print {
     my $show_handle = $self->{show_handle}           || *STDOUT;
     my $delim       = $self->{mode_options}->{delim} || "\n";
     print $show_handle $whatever . $delim;
+
+    return;
 }
 
 sub _print_global_mode_options {
     my ($self) = @_;
-
-    $DB::single = 1;
 
     my %global_mode_options = %{$self->{mode_options}};
 
@@ -448,6 +447,8 @@ sub _print_global_mode_options {
         my $val = $global_mode_options{$opt};
         $self->_print(_render_option($opt => $val));
     }
+
+    return;
 }
 
 sub _print_row {
@@ -474,6 +475,8 @@ sub _print_row {
     else {
         croak "unsupported output row type: " . ref($row);
     }
+
+    return;
 }
 
 sub _render_option {
@@ -495,14 +498,18 @@ C<ROFI_SCRIPT_DEBUG> to enable this.
 =cut
 
 sub debug {
+    my ($maybe_self) = my (@but_maybe_not) = @_;
+
     return unless $ROFI_SCRIPT_DEBUG;
 
-    if (ref($_[0]) =~ /Rofi::Script/) {
-        p $_[0];
+    if (ref($maybe_self) =~ /Rofi::Script/x) {
+        p $maybe_self;
     }
     else {
-        p @_;
+        p @but_maybe_not;
     }
+
+    return;
 }
 
 1;
