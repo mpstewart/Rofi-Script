@@ -1,4 +1,5 @@
 package Rofi::Script;
+
 # VERSION
 
 use strict;
